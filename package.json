@@ -1,0 +1,13 @@
+{
+  "name": "ai-pages-worker",
+  "version": "0.1.0",
+  "description": "Cloudflare Pages + Worker AI project",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler pages dev public --compatibility-date=2024-08-01",
+    "deploy": "wrangler pages deploy public"
+  },
+  "devDependencies": {
+    "wrangler": "^3.78.10"
+  }
+}

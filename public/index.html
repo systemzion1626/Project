@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI 项目</title>
+    <link rel="stylesheet" href="/style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <h2>控制台</h2>
+          <button id="toggleSidebar">收起</button>
+        </div>
+        <section class="sidebar-section">
+          <h3>数据库</h3>
+          <ul id="kbList"></ul>
+        </section>
+        <section class="sidebar-section">
+          <h3>AI 创建的文件</h3>
+          <ul id="fileList"></ul>
+        </section>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <nav class="tabs">
+            <button class="tab active" data-tab="chat">AI 对话</button>
+            <button class="tab" data-tab="kb">知识库存储</button>
+          </nav>
+        </header>
+
+        <section id="chat" class="tab-panel active">
+          <div class="chat-controls">
+            <label>
+              模型：
+              <select id="modelSelect">
+                <option value="gpt-5.2">GPT-5.2</option>
+                <option value="gpt-5.2-auto">GPT-5.2 Auto</option>
+                <option value="gpt-5.2-instant">GPT-5.2 Instant</option>
+                <option value="gpt-5.2-thinking">GPT-5.2 Thinking</option>
+                <option value="gpt-5.1-instant">GPT-5.1 Instant</option>
+                <option value="gpt-5.1-thinking">GPT-5.1 Thinking</option>
+                <option value="gpt-5-instant">GPT-5 Instant</option>
+                <option value="gpt-5-thinking-mini">GPT-5 Thinking mini</option>
+                <option value="gpt-5-thinking">GPT-5 Thinking</option>
+                <option value="gpt-4o">GPT-4o</option>
+                <option value="gpt-4.1">GPT-4.1</option>
+                <option value="o3">o3</option>
+                <option value="o4-mini">o4-mini</option>
+              </select>
+            </label>
+            <button id="clearChat">清空记忆</button>
+          </div>
+          <div id="chatWindow" class="chat-window"></div>
+          <form id="chatForm" class="chat-form">
+            <textarea id="chatInput" placeholder="输入消息..." required></textarea>
+            <button type="submit">发送</button>
+          </form>
+          <div class="chat-actions">
+            <input id="fileNameInput" placeholder="文件名 (例如 report.md)" />
+            <button id="saveAsFile">保存最新回复为文件</button>
+          </div>
+        </section>
+
+        <section id="kb" class="tab-panel">
+          <form id="kbForm" class="kb-form">
+            <input id="kbTitle" placeholder="知识标题" required />
+            <textarea id="kbContent" placeholder="知识内容" required></textarea>
+            <button type="submit">保存到知识库</button>
+          </form>
+          <div class="kb-note">
+            <p>保存时会由 AI 自动判断分类，分类不会显示在列表中。</p>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
