@@ -12,15 +12,28 @@ const saveAsFileButton = document.getElementById("saveAsFile");
 const clearChatButton = document.getElementById("clearChat");
 const toggleSidebarButton = document.getElementById("toggleSidebar");
 const sidebar = document.getElementById("sidebar");
+const loginPanel = document.getElementById("loginPanel");
+const appPanel = document.getElementById("appPanel");
+const loginForm = document.getElementById("loginForm");
+const loginUsername = document.getElementById("loginUsername");
+const loginPassword = document.getElementById("loginPassword");
+const loginError = document.getElementById("loginError");
+const logoutButton = document.getElementById("logoutButton");
 
 const sessionId = localStorage.getItem("sessionId") || crypto.randomUUID();
 localStorage.setItem("sessionId", sessionId);
+const tokenKey = "authToken";
 
 let lastAssistantMessage = "";
 
 const fetchJson = async (url, options = {}) => {
+  const token = localStorage.getItem(tokenKey);
+  const headers = { "Content-Type": "application/json" };
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
   const response = await fetch(url, {
-    headers: { "Content-Type": "application/json" },
+    headers,
     ...options
   });
   const data = await response.json();
@@ -153,4 +166,54 @@ tabs.forEach((tab) => {
   });
 });
 
-refreshSidebar();
+const showApp = () => {
+  loginPanel.classList.add("hidden");
+  appPanel.classList.remove("hidden");
+};
+
+const showLogin = (message = "") => {
+  loginPanel.classList.remove("hidden");
+  appPanel.classList.add("hidden");
+  loginError.textContent = message;
+};
+
+loginForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  loginError.textContent = "";
+  const username = loginUsername.value.trim();
+  const password = loginPassword.value.trim();
+
+  try {
+    const data = await fetchJson("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ username, password })
+    });
+    localStorage.setItem(tokenKey, data.token);
+    loginPassword.value = "";
+    showApp();
+    await refreshSidebar();
+  } catch (error) {
+    showLogin(error.message);
+  }
+});
+
+logoutButton.addEventListener("click", async () => {
+  localStorage.removeItem(tokenKey);
+  showLogin("已退出登录。");
+});
+
+const initialize = async () => {
+  if (localStorage.getItem(tokenKey)) {
+    try {
+      await refreshSidebar();
+      showApp();
+    } catch (error) {
+      localStorage.removeItem(tokenKey);
+      showLogin("登录已失效，请重新登录。");
+    }
+  } else {
+    showLogin();
+  }
+};
+
+initialize();

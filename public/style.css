@@ -69,6 +69,67 @@ body {
   padding: 24px;
 }
 
+.hidden {
+  display: none;
+}
+
+.login-panel {
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-card {
+  background: #fff;
+  padding: 32px;
+  border-radius: 16px;
+  width: min(360px, 90vw);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.login-card h2 {
+  font-size: 20px;
+}
+
+.login-card form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.login-card input {
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #cbd5f5;
+}
+
+.login-card button {
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #fff;
+  cursor: pointer;
+}
+
+.login-error {
+  color: #dc2626;
+  min-height: 18px;
+}
+
+.logout {
+  background: #ef4444;
+  color: #fff;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
 .topbar {
   display: flex;
   justify-content: space-between;

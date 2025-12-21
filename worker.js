@@ -41,6 +41,41 @@ const listFromKv = async (kv, key) => {
 
 const saveToKv = (kv, key, value) => kv.put(key, JSON.stringify(value));
 
+const ADMIN_USERNAME = "Administrator";
+const ADMIN_PASSWORD = "@Abcabcabc1";
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_MS = 30 * 60 * 1000;
+
+const getAuthState = async (kv) => {
+  const raw = await kv.get("auth:state");
+  if (!raw) {
+    return { attempts: 0, lockUntil: 0 };
+  }
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return { attempts: 0, lockUntil: 0 };
+  }
+};
+
+const saveAuthState = (kv, state) => saveToKv(kv, "auth:state", state);
+
+const createToken = () => crypto.randomUUID();
+
+const requireAuth = async (request, env) => {
+  ensureKv(env.AI_AUTH, "AI_AUTH");
+  const authHeader = request.headers.get("Authorization") || "";
+  const token = authHeader.replace("Bearer ", "").trim();
+  if (!token) {
+    return jsonResponse({ error: "Unauthorized" }, { status: 401 });
+  }
+  const session = await env.AI_AUTH.get(`session:${token}`);
+  if (!session) {
+    return jsonResponse({ error: "Unauthorized" }, { status: 401 });
+  }
+  return null;
+};
+
 const callOpenAI = async ({ apiKey, model, messages }) => {
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -81,6 +116,39 @@ const detectFolder = (fileName) => {
 
 const sanitizeFileName = (name) =>
   name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 80) || "untitled.txt";
+
+const handleLogin = async (request, env) => {
+  ensureKv(env.AI_AUTH, "AI_AUTH");
+  const payload = await safeJsonParse(request);
+  const username = payload?.username?.trim();
+  const password = payload?.password?.trim();
+
+  if (!username || !password) {
+    return jsonResponse({ error: "Username and password are required" }, { status: 400 });
+  }
+
+  const state = await getAuthState(env.AI_AUTH);
+  const now = Date.now();
+  if (state.lockUntil && now < state.lockUntil) {
+    const minutes = Math.ceil((state.lockUntil - now) / 60000);
+    return jsonResponse({ error: `Locked. Try again in ${minutes} minutes.` }, { status: 423 });
+  }
+
+  if (username !== ADMIN_USERNAME || password !== ADMIN_PASSWORD) {
+    const attempts = state.attempts + 1;
+    const nextState = {
+      attempts,
+      lockUntil: attempts >= MAX_ATTEMPTS ? now + LOCKOUT_MS : 0
+    };
+    await saveAuthState(env.AI_AUTH, nextState);
+    return jsonResponse({ error: "Invalid credentials" }, { status: 401 });
+  }
+
+  await saveAuthState(env.AI_AUTH, { attempts: 0, lockUntil: 0 });
+  const token = createToken();
+  await env.AI_AUTH.put(`session:${token}`, JSON.stringify({ username, createdAt: new Date().toISOString() }), { expirationTtl: 60 * 60 * 24 });
+  return jsonResponse({ token });
+};
 
 const handleChat = async (request, env) => {
   const apiKey = env.OPENAI_API_KEY;
@@ -236,6 +304,13 @@ const handleRequest = async (request, env) => {
   const url = new URL(request.url);
   if (url.pathname.startsWith("/api/")) {
     try {
+      if (url.pathname === "/api/auth/login" && request.method === "POST") {
+        return await handleLogin(request, env);
+      }
+      const authError = await requireAuth(request, env);
+      if (authError) {
+        return authError;
+      }
       if (url.pathname === "/api/chat" && request.method === "POST") {
         return await handleChat(request, env);
       }
